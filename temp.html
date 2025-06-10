@@ -60,7 +60,7 @@
 <body>
   <div class="container">
     <h2>City Weather Info</h2>
-    <input type="text" id="cityInput" placeholder="Enter city name">
+    <input type="text" id="cityInput" placeholder="Enter city name" onkeypress="if(event.key === 'Enter') getWeather()">
     <br>
     <button onclick="getWeather()">Search</button>
     <div class="info" id="weatherInfo"></div>
@@ -69,11 +69,15 @@
   <script>
     async function getWeather() {
       const city = document.getElementById("cityInput").value.trim();
-      const apiKey = 'a32c5b94b2516ea8ce32aeafcb476a49';  
+      const apiKey = 'a32c5b94b2516ea8ce32aeafcb476a49';
+      const weatherInfo = document.getElementById("weatherInfo");
+
       if (!city) {
         alert("Please enter a city name.");
         return;
       }
+
+      weatherInfo.innerHTML = "Loading...";
 
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
 
@@ -82,17 +86,17 @@
         if (!response.ok) throw new Error("City not found");
 
         const data = await response.json();
-
         const temp = data.main.temp;
         const weather = data.weather[0].main;
-        const timezoneOffset = data.timezone; // in seconds
+        const timezoneOffset = data.timezone;
 
-        const nowUTC = new Date(Date.now() + timezoneOffset * 1000);
+        const nowUTC = new Date();
+        const localTime = new Date(nowUTC.getTime() + timezoneOffset * 1000);
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const date = nowUTC.toLocaleDateString('en-US', options);
-        const time = nowUTC.toLocaleTimeString('en-US');
+        const date = localTime.toLocaleDateString('en-US', options);
+        const time = localTime.toLocaleTimeString('en-US');
 
-        document.getElementById("weatherInfo").innerHTML = `
+        weatherInfo.innerHTML = `
           <span><strong>City:</strong> ${data.name}</span>
           <span><strong>Temperature:</strong> ${temp} °C</span>
           <span><strong>Weather:</strong> ${weather}</span>
@@ -100,7 +104,10 @@
           <span><strong>Time:</strong> ${time}</span>
         `;
       } catch (error) {
-        document.getElementById("weatherInfo").innerHTML = `<span style="color: red;">${error.message}</span>`;
+        let message = error.message === "City not found"
+          ? "City not found. Please try again."
+          : "Network error or invalid response.";
+        weatherInfo.innerHTML = `<span style="color: red;">${message}</span>`;
       }
     }
   </script>
